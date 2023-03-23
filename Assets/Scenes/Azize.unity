@@ -1729,32 +1729,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 2046999423}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 686c5f7237f4ce849bc1ce8ce76ba0d3, type: 3}
+  m_Script: {fileID: 11500000, guid: 40aef21d5be97044aa9e94706c71302f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _diceResult: {fileID: 6617760361498548099}
-  boardPositions:
-  - {fileID: 0}
-  - {fileID: 847047966}
-  - {fileID: 2104984838}
-  - {fileID: 2074203771}
-  - {fileID: 331270953}
-  - {fileID: 798755606}
-  - {fileID: 57713688}
-  - {fileID: 1156943966}
-  - {fileID: 721613718}
-  - {fileID: 1870165764}
-  - {fileID: 2058862267}
-  - {fileID: 963305031}
-  - {fileID: 1182816223}
-  - {fileID: 1568212084}
-  - {fileID: 2119678249}
-  - {fileID: 1077408861}
-  _diceCamera: {fileID: 2074820222}
-  playerCamera: {fileID: 1045608038}
-  characterController: {fileID: 2046999429}
-  moveSpeed: 2.5
-  jumpPower: 10
+  _diceResult: {fileID: 0}
+  boardPositions: []
+  _diceCamera: {fileID: 0}
+  playerCamera: {fileID: 0}
+  characterController: {fileID: 0}
+  jumpPower: 2
+  moveSpeed: 5
 --- !u!143 &2046999429
 CharacterController:
   m_ObjectHideFlags: 0
