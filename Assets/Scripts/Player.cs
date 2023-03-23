@@ -1,137 +1,81 @@
-/*using System.Collections;
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
-using TMPro;
-using UnityEngine.SceneManagement;
-using Unity.VisualScripting;
-using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    private Rigidbody _rigidbody;
-    private int ScoreValue;
-    private float _speed = 0.5f;
-    [SerializeField] private TMP_Text _scoreText;
-    [SerializeField] private ScenarioData _scenario;
-    [SerializeField] private GameObject _wallPrefab;
-    public delegate void MessageEvent();
-    public static event MessageEvent ObjetToucher;
-    public delegate void Particule();
-    public static event Particule PlayParticule;
-    [SerializeField]private ParticleSystem _particle;
-    [SerializeField] private GameObject followPlayer;
-    private float movementX;
-    private float movementY;
-    private int FirstStart;
+    [SerializeField] private Dice _diceResult;
+    [SerializeField] private Transform[] boardPositions;
+    [SerializeField] private Camera _diceCamera;
+    [SerializeField] private Camera playerCamera;
+    [SerializeField] private CharacterController characterController;
+    [SerializeField] private float jumpPower = 2f;
+
+    private int currentBoardPosition = 0;
+    public float moveSpeed = 5.0f;
 
 
-    //private bool _reset = false;
     void Start()
     {
-        Scene scene = SceneManager.GetActiveScene();
-        if (scene.name == "Level - 1")
+        _diceResult.OnDiceLaunched += Move;
+
+    }
+    private void OnDestroy()
+    {
+        _diceResult.OnDiceLaunched -= Move;
+    }
+
+    public void Move(int move)
+    {
+        Debug.Log("move: " + move);
+        StartCoroutine(MovePlayer(move));
+        ActivatePlayerCamera();
+
+    }
+
+    private IEnumerator MovePlayer(int steps)
+    {
+        while (steps > 0)
         {
-            PlayerPrefs.DeleteKey("Score");
-            PlayerPrefs.DeleteKey("ScoreValue");
-        }
+            Vector3 startPosition = transform.position;
+            Vector3 targetPosition = boardPositions[currentBoardPosition + 1].position;
+            float distanceToTarget = Vector3.Distance(startPosition, targetPosition);
 
+            // Calculez la durée du saut en fonction de la vitesse de déplacement
+            float jumpDuration = distanceToTarget / moveSpeed;
 
-        _rigidbody = GetComponent<Rigidbody>();
-        _scoreText.text = PlayerPrefs.GetString("Score");
-        ScoreValue = PlayerPrefs.GetInt("ScoreValue");
-    }
+            float jumpProgress = 0f;
+            float currentJumpHeight = 0f;
+            float previousJumpHeight = 0f;
 
-    private void Update()
-    {
-    }
-
-    public void OnMove(InputValue movementvalue)
-    {
-        Vector2 movementVector = movementvalue.Get<Vector2>();
-        movementX = movementVector.x;
-        movementY = movementVector.y;
-
-    }
-
-    private void FixedUpdate()
-    {
-
-        if (_rigidbody.velocity == Vector3.zero)
-        {
-            if (FirstStart < 1)
+            while (jumpProgress < 1f)
             {
-                PlayParticule.Invoke();
-                FirstStart++;
+                jumpProgress += Time.deltaTime / jumpDuration;
+
+                currentJumpHeight = Mathf.Lerp(0, jumpPower, jumpProgress) - Mathf.Lerp(0, jumpPower, jumpProgress * jumpProgress);
+
+                float verticalMovement = currentJumpHeight - previousJumpHeight;
+                previousJumpHeight = currentJumpHeight;
+
+                characterController.Move((targetPosition - startPosition) * (Time.deltaTime / jumpDuration) + new Vector3(0, verticalMovement, 0));
+
+                yield return null;
             }
 
-
+            currentBoardPosition++;
+            steps--;
         }
-        else
-        { 
-            FirstStart = 0;
-        }
-        Vector3 movement = new Vector3(movementX, 0.0f, movementY);
-        _rigidbody.AddForce(movement * _speed);
-        
     }
-    
-    private void OnTriggerEnter(Collider other)
+
+
+    public void ActivateDiceCamera()
     {
-        if (other.gameObject.CompareTag("Target_Trigger"))
-        {
-            Debug.Log(other.gameObject.transform.position);
-            Destroy(other.gameObject);
-            UpdateScore();
-            ObjetToucher.Invoke();
-            PlayParticule.Invoke();
-
-
-        }
+        _diceCamera.enabled = true;
+        playerCamera.enabled = false;
     }
 
-    private void OnCollisionEnter(Collision collision)
+    public void ActivatePlayerCamera()
     {
-        if (collision.gameObject.CompareTag("Target"))
-        {
-            Debug.Log(collision.gameObject.transform.position);
-            Destroy(collision.gameObject);
-            UpdateScore();
-            ObjetToucher.Invoke();
-            PlayParticule.Invoke();
-
-        }
+        playerCamera.enabled = true;
+        _diceCamera.enabled = false;
     }
-
-
-    private void UpdateScore()
-    {
-        int i = 0;
-        if (i < _scenario.FirstWalls.Length)
-        {
-            Instantiate(_wallPrefab, _scenario.FirstWalls[ScoreValue].position,Quaternion.identity);
-            i++;
-        }
-       
-        ScoreValue++;
-        PlayerPrefs.SetString("Score", "Score : " + ScoreValue.ToString());
-        _scoreText.text = PlayerPrefs.GetString("Score");
-
-
-
-
-        if (ScoreValue == 8)
-        {
-            PlayerPrefs.SetInt("ScoreValue", ScoreValue);
-            SceneManager.LoadScene("Level - 2");
-
-
-        }
-
-        if (ScoreValue == 16)
-        {
-            SceneManager.LoadScene("EndScreen");
-        }
-
-    }
-
-}*/
+}
