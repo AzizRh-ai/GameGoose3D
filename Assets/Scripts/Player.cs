@@ -1,84 +1,137 @@
-using System.Collections;
+/*using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] private Dice _diceResult;
-    [SerializeField] private Transform[] boardPositions;
-    [SerializeField] private Camera _diceCamera;
-    [SerializeField] private Camera playerCamera;
-    [SerializeField] private CharacterController characterController;
+    private Rigidbody _rigidbody;
+    private int ScoreValue;
+    private float _speed = 0.5f;
+    [SerializeField] private TMP_Text _scoreText;
+    [SerializeField] private ScenarioData _scenario;
+    [SerializeField] private GameObject _wallPrefab;
+    public delegate void MessageEvent();
+    public static event MessageEvent ObjetToucher;
+    public delegate void Particule();
+    public static event Particule PlayParticule;
+    [SerializeField]private ParticleSystem _particle;
+    [SerializeField] private GameObject followPlayer;
+    private float movementX;
+    private float movementY;
+    private int FirstStart;
 
-    private int currentBoardPosition = 0;
-    public float moveSpeed = 5.0f;
 
-
+    //private bool _reset = false;
     void Start()
     {
-        _diceResult.OnDiceLaunched += Move;
-
-    }
-    private void OnDestroy()
-    {
-        _diceResult.OnDiceLaunched -= Move;
-    }
-
-    public void Move(int steps)
-    {
-        Debug.Log("step::" + steps);
-        StartCoroutine(MovePlayer(steps));
-        ActivatePlayerCamera(); // Ajoutez cette ligne
-
-    }
-
-    public float jumpPower = 2f; // Hauteur du saut
-    private IEnumerator MovePlayer(int steps)
-    {
-        while (steps > 0)
+        Scene scene = SceneManager.GetActiveScene();
+        if (scene.name == "Level - 1")
         {
-            Vector3 startPosition = transform.position;
-            Vector3 targetPosition = boardPositions[currentBoardPosition + 1].position;
-            float distanceToTarget = Vector3.Distance(startPosition, targetPosition);
+            PlayerPrefs.DeleteKey("Score");
+            PlayerPrefs.DeleteKey("ScoreValue");
+        }
 
-            // Calculez la durée du saut en fonction de la vitesse de déplacement
-            float jumpDuration = distanceToTarget / moveSpeed;
 
-            float jumpProgress = 0f;
-            float currentJumpHeight = 0f;
-            float previousJumpHeight = 0f;
+        _rigidbody = GetComponent<Rigidbody>();
+        _scoreText.text = PlayerPrefs.GetString("Score");
+        ScoreValue = PlayerPrefs.GetInt("ScoreValue");
+    }
 
-            while (jumpProgress < 1f)
+    private void Update()
+    {
+    }
+
+    public void OnMove(InputValue movementvalue)
+    {
+        Vector2 movementVector = movementvalue.Get<Vector2>();
+        movementX = movementVector.x;
+        movementY = movementVector.y;
+
+    }
+
+    private void FixedUpdate()
+    {
+
+        if (_rigidbody.velocity == Vector3.zero)
+        {
+            if (FirstStart < 1)
             {
-                jumpProgress += Time.deltaTime / jumpDuration;
-
-                // Utilisez une fonction d'interpolation pour déterminer la hauteur actuelle du saut
-                currentJumpHeight = Mathf.Lerp(0, jumpPower, jumpProgress) - Mathf.Lerp(0, jumpPower, jumpProgress * jumpProgress);
-
-                // Calculez le déplacement vertical pour cette itération
-                float verticalMovement = currentJumpHeight - previousJumpHeight;
-                previousJumpHeight = currentJumpHeight;
-
-                // Déplacez le personnage vers la position cible tout en suivant la trajectoire de saut
-                characterController.Move((targetPosition - startPosition) * (Time.deltaTime / jumpDuration) + new Vector3(0, verticalMovement, 0));
-
-                yield return null;
+                PlayParticule.Invoke();
+                FirstStart++;
             }
 
-            currentBoardPosition++;
-            steps--;
+
+        }
+        else
+        { 
+            FirstStart = 0;
+        }
+        Vector3 movement = new Vector3(movementX, 0.0f, movementY);
+        _rigidbody.AddForce(movement * _speed);
+        
+    }
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Target_Trigger"))
+        {
+            Debug.Log(other.gameObject.transform.position);
+            Destroy(other.gameObject);
+            UpdateScore();
+            ObjetToucher.Invoke();
+            PlayParticule.Invoke();
+
+
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Target"))
+        {
+            Debug.Log(collision.gameObject.transform.position);
+            Destroy(collision.gameObject);
+            UpdateScore();
+            ObjetToucher.Invoke();
+            PlayParticule.Invoke();
+
         }
     }
 
 
-    public void ActivateDiceCamera()
+    private void UpdateScore()
     {
-        _diceCamera.enabled = true;
-        playerCamera.enabled = false;
+        int i = 0;
+        if (i < _scenario.FirstWalls.Length)
+        {
+            Instantiate(_wallPrefab, _scenario.FirstWalls[ScoreValue].position,Quaternion.identity);
+            i++;
+        }
+       
+        ScoreValue++;
+        PlayerPrefs.SetString("Score", "Score : " + ScoreValue.ToString());
+        _scoreText.text = PlayerPrefs.GetString("Score");
+
+
+
+
+        if (ScoreValue == 8)
+        {
+            PlayerPrefs.SetInt("ScoreValue", ScoreValue);
+            SceneManager.LoadScene("Level - 2");
+
+
+        }
+
+        if (ScoreValue == 16)
+        {
+            SceneManager.LoadScene("EndScreen");
+        }
+
     }
 
-    public void ActivatePlayerCamera()
-    {
-        playerCamera.enabled = true;
-        _diceCamera.enabled = false;
-    }
-}
+}*/
