@@ -1,0 +1,30 @@
+using UnityEngine;
+
+public class DiceResult : MonoBehaviour
+{
+
+    [SerializeField] private GameObject[] faces = new GameObject[6];
+    private Rigidbody _dice;
+
+
+    private void Start()
+    {
+        _dice = GetComponent<Rigidbody>();
+    }
+    private void Update()
+    {
+        if (IsStopped())
+        {
+            int topFace = GetTopFace();
+            Debug.Log("Result: " + topFace);
+        }
+    }
+
+    private bool IsStopped()
+    {
+        return _dice.velocity.sqrMagnitude < 0.01f && _dice.angularVelocity.sqrMagnitude < 0.01f;
+    }
+
+    // Start is called before the first frame update
+
+}
