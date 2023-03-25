@@ -1737,8 +1737,11 @@ MonoBehaviour:
   _diceCamera: {fileID: 0}
   playerCamera: {fileID: 0}
   characterController: {fileID: 0}
+  turnManager: {fileID: 0}
   jumpPower: 2
   moveSpeed: 5
+  playerType: 0
+  dice: {fileID: 0}
 --- !u!143 &2046999429
 CharacterController:
   m_ObjectHideFlags: 0
@@ -2367,7 +2370,8 @@ MonoBehaviour:
   - {fileID: 17690421}
   diceRigidbody: {fileID: 6617760361498548098}
   force: {x: 0, y: 10, z: 0}
-  player: {fileID: 2046999428}
+  _player: {fileID: 0}
+  turnManager: {fileID: 0}
 --- !u!65 &6617760361498548100
 BoxCollider:
   m_ObjectHideFlags: 0

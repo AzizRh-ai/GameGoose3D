@@ -1,3 +1,4 @@
+using Cinemachine;
 using System;
 using System.Collections;
 using UnityEngine;
@@ -6,57 +7,83 @@ using Random = UnityEngine.Random;
 public class Dice : MonoBehaviour
 {
     public event Action<int> OnDiceLaunched;
+    [SerializeField] private CinemachineVirtualCamera diceCamera;
+    [SerializeField] private CinemachineVirtualCamera playerCamera;
+    [SerializeField] private CinemachineVirtualCamera aiCamera;
 
     [SerializeField] private GameObject[] faces = new GameObject[6];
     [SerializeField] private Rigidbody diceRigidbody;
     [SerializeField] private Vector3 force;
+    [SerializeField] private Player _player;
+    [SerializeField] private TurnPlayerManager turnManager;
+
     private Rigidbody _dice;
     private bool _diceRolling;
     private Coroutine _checkDiceStoppedCoroutine;
-    [SerializeField] private Player player;
-
-
+    private bool canRoll = true;
+    private TurnPlayerManager.IsPlayer _activePlayerType = TurnPlayerManager.IsPlayer.Human;
 
     private void Start()
     {
         _dice = GetComponent<Rigidbody>();
-        _diceRolling = true;
-        Roll();
-        _checkDiceStoppedCoroutine = StartCoroutine(CheckDiceStopped());
-        player.ActivateDiceCamera(); // Ajoutez cette ligne
-
+        _diceRolling = false;
+        turnManager.OnActivePlayerChanged += HandleActivePlayerChanged;
     }
 
-    void Update()
+    private void OnDestroy()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            if (!_diceRolling)
-            {
-                Roll();
-                if (_checkDiceStoppedCoroutine != null)
-                {
-                    StopCoroutine(_checkDiceStoppedCoroutine);
-                }
-                _checkDiceStoppedCoroutine = StartCoroutine(CheckDiceStopped());
-                player.ActivateDiceCamera(); // Ajoutez cette ligne
+        turnManager.OnActivePlayerChanged -= HandleActivePlayerChanged;
+    }
 
+    public void RequestRoll()
+    {
+        diceCamera.enabled = true;
+        if (!_diceRolling && canRoll)
+        {
+            Roll();
+            if (_checkDiceStoppedCoroutine != null)
+            {
+                StopCoroutine(_checkDiceStoppedCoroutine);
             }
+            _checkDiceStoppedCoroutine = StartCoroutine(CheckDiceStopped());
         }
+    }
+
+    private void HandleActivePlayerChanged(TurnPlayerManager.IsPlayer currentPlayerType)
+    {
+        _activePlayerType = currentPlayerType;
+    }
+
+    public void EnableDiceRolling()
+    {
+        canRoll = true;
+    }
+
+    public void DisableDiceRolling()
+    {
+        canRoll = false;
     }
 
     private IEnumerator CheckDiceStopped()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(2f);
         yield return new WaitWhile(() => !IsStopped());
         _diceRolling = false;
 
         int topFace = GetTopFace();
-        Debug.Log("Resultu: " + topFace);
-
         OnDiceLaunched?.Invoke(topFace);
 
-
+        if (_activePlayerType == TurnPlayerManager.IsPlayer.Human)
+        {
+            // Idem besoin d'une optimisiation et refacto
+            DeactivateDiceCamera();
+            ActivatePlayerCamera();
+        }
+        else
+        {
+            DeactivateDiceCamera();
+            ActivateAiCamera();
+        }
     }
 
     private bool IsStopped()
@@ -64,7 +91,7 @@ public class Dice : MonoBehaviour
         return _dice.velocity.sqrMagnitude < 0.01f && _dice.angularVelocity.sqrMagnitude < 0.01f;
     }
 
-    void Roll()
+    public void Roll()
     {
         _diceRolling = true;
         diceRigidbody.AddForce(force, ForceMode.Impulse);
@@ -90,4 +117,30 @@ public class Dice : MonoBehaviour
         }
         return resultFace;
     }
+
+    public void ActivateDiceCamera()
+    {
+        diceCamera.enabled = true;
+        playerCamera.enabled = false;
+        aiCamera.enabled = false;
+    }
+    public void DeactivateDiceCamera()
+    {
+        diceCamera.enabled = false;
+    }
+
+    public void ActivatePlayerCamera()
+    {
+        playerCamera.enabled = true;
+        aiCamera.enabled = false;
+    }
+
+    public void ActivateAiCamera()
+    {
+        aiCamera.enabled = true;
+        playerCamera.enabled = false;
+    }
 }
+
+
+

@@ -1,35 +1,78 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using static TurnPlayerManager;
 
 public class Player : MonoBehaviour
 {
     [SerializeField] private Dice _diceResult;
     [SerializeField] private Transform[] boardPositions;
-    [SerializeField] private Camera _diceCamera;
-    [SerializeField] private Camera playerCamera;
     [SerializeField] private CharacterController characterController;
+    [SerializeField] private TurnPlayerManager turnManager;
     [SerializeField] private float jumpPower = 2f;
 
-    private int currentBoardPosition = 0;
-    public float moveSpeed = 5.0f;
+    [SerializeField] private int currentBoardPosition = 0;
+    [SerializeField] private float moveSpeed = 5.0f;
+    public IsPlayer playerType;
+    public Dice dice;
 
+    public event Action OnPlayerMoveFinished;
 
-    void Start()
+    private void Start()
     {
         _diceResult.OnDiceLaunched += Move;
-
+        turnManager.OnActivePlayerChanged += HandleActivePlayerChanged;
     }
+
     private void OnDestroy()
     {
         _diceResult.OnDiceLaunched -= Move;
+        turnManager.OnActivePlayerChanged -= HandleActivePlayerChanged;
+    }
+
+    private void Update()
+    {
+        if (playerType == TurnPlayerManager.IsPlayer.Human && Input.GetKeyDown(KeyCode.Space))
+        {
+            dice.RequestRoll();
+        }
+    }
+
+    private void HandleActivePlayerChanged(TurnPlayerManager.IsPlayer currentPlayerType)
+    {
+        if (playerType == currentPlayerType)
+        {
+            if (currentPlayerType == TurnPlayerManager.IsPlayer.Human)
+            {
+                dice.ActivateDiceCamera();
+            }
+            else
+            {
+                dice.ActivateDiceCamera();
+                StartCoroutine(AiPlayDelay());
+            }
+        }
     }
 
     public void Move(int move)
     {
-        Debug.Log("move: " + move);
-        StartCoroutine(MovePlayer(move));
-        ActivatePlayerCamera();
+        Debug.Log("Move: " + playerType + " to : " + move + " plateforme");
 
+        StartCoroutine(MovePlayer(move));
+        dice.DeactivateDiceCamera();
+    }
+
+    private IEnumerator AiPlayDelay()
+    {
+        dice.ActivateDiceCamera();
+
+        dice.RequestRoll();
+        yield return new WaitForSeconds(5f);
+
+        //TODO: A corriger
+        dice.DeactivateDiceCamera();
+        dice.ActivateAiCamera();
     }
 
     private IEnumerator MovePlayer(int steps)
@@ -38,9 +81,10 @@ public class Player : MonoBehaviour
         {
             Vector3 startPosition = transform.position;
             Vector3 targetPosition = boardPositions[currentBoardPosition + 1].position;
+            Debug.Log("CurrentPosition = " + currentBoardPosition);
+            Debug.Log("steps = " + steps);
             float distanceToTarget = Vector3.Distance(startPosition, targetPosition);
 
-            // Calculez la durée du saut en fonction de la vitesse de déplacement
             float jumpDuration = distanceToTarget / moveSpeed;
 
             float jumpProgress = 0f;
@@ -64,18 +108,29 @@ public class Player : MonoBehaviour
             currentBoardPosition++;
             steps--;
         }
+        OnPlayerMoveFinished?.Invoke();
+        CheckWinOrLoose();
+
     }
 
-
-    public void ActivateDiceCamera()
+    public void DisableDiceRolling()
     {
-        _diceCamera.enabled = true;
-        playerCamera.enabled = false;
+        _diceResult.DisableDiceRolling();
     }
 
-    public void ActivatePlayerCamera()
+    private void CheckWinOrLoose()
     {
-        playerCamera.enabled = true;
-        _diceCamera.enabled = false;
+        if (currentBoardPosition >= boardPositions.Length - 1)
+        {
+            if (playerType == TurnPlayerManager.IsPlayer.Human)
+            {
+                SceneManager.LoadScene("EndScreen");
+            }
+            else
+            {
+                //IA gagne..
+                SceneManager.LoadScene("EndScreen");
+            }
+        }
     }
 }

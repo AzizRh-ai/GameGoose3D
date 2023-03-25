@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,6 +10,6 @@ public class EndScreen : MonoBehaviour
 
     public void Scene1()
     {
-        SceneManager.LoadScene("StartScreen 1");
+        SceneManager.LoadScene("Demo_01");
     }
 }
